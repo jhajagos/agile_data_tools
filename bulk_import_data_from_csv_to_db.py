@@ -173,7 +173,9 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
 
             insert_template = "insert into %s  %s values (%s)" % (engine.dialect.identifier_preparer.quote_identifier(table_name), header_string,
                                                                   ("%s," * len(columns_to_include))[:-1])
-            connection.execute(insert_template % tuple(data_converted))
+
+            if len(data_converted) > 0:
+                connection.execute(insert_template % tuple(data_converted))
 
             if i % 1000 == 0:
                 print("Imported %s records" % i)
