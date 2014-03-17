@@ -17,6 +17,8 @@ from string import join
 import csv
 import pprint
 from optparse import OptionParser
+import os
+import json
 
 from sqlalchemy import Table, Column, Integer, Text, Float, String, DateTime, MetaData, create_engine
 
@@ -48,7 +50,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
             header = []
             special_characters_map = {"#": "_POUND", "%": "_PERCENT", " ": "_", '"': "",
                                       "&": "AND", "/": "_", "-": "_", ".": "_PERIOD",
-                                      "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_"}
+                                      "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_", "$": "_DOLLAR"}
 
             for original_label in raw_header:  # Rewrite column names in a more SQL friendly way
                 label = original_label
@@ -159,7 +161,8 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
             columns_to_include = []
             j = 0
             for value in split_line:
-                converted_string = convert_string(value,data_type[positions[j]])
+                cleaned_value = clean_string(value)
+                converted_string = convert_string(cleaned_value, data_type[positions[j]])
                 if converted_string is not None:
                     columns_to_include.append(header[j])
                     data_converted.append(converted_string)
@@ -177,9 +180,10 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
             if len(data_converted) > 0:
                 connection.execute(insert_template % tuple(data_converted))
 
-            if i % 1000 == 0:
-                print("Imported %s records" % i)
+            if i % 1000 == 0 and i > 0:
+                print("Importing %s records" % i)
             i += 1
+        print("Imported %s rows into '%s'" % (i, table_name))
     connection.close()
 
 
@@ -310,24 +314,52 @@ def get_data_type(string_to_evaluate):
 
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-f", "--file", dest="filename",
-                      help="CSV file to import", metavar="file_name")
+    parser.add_option("-f", "--file", dest="file_name",
+                      help="CSV file to import")
 
     parser.add_option("-d", "--delimiter", dest="delimiter",
-                      help="default delimiter is ','", metavar="delimiter", default=",")
+                      help="default delimiter is ','", default=",")
 
     parser.add_option("-c", "--connection",
-                      help="SQLAlchemy Connection String", default="sqlite:///import.db3", metavar="connection_string")
+                      help="SQLAlchemy Connection String", default="sqlite:///import.db3", dest="connection_string")
 
     parser.add_option("-t", "--tablename",
-                      help="SQLALchemy connection string", default="csv_import_table", metavar="table_name")
+                      help="SQLALchemy connection string", default="csv_import_table", dest="table_name")
 
     parser.add_option("-n", "--noheader",
-                      help="Whether there is a header present or not", default=False, metavar="no_headers")
+                      help="Whether there is a header present or not", default=False, dest="no_headers")
 
-    parser.add_option("-j", "--jsonfile", default=False, metavar="json_file_name")
+    parser.add_option("-j", "--jsonfile", default=False, dest="json_file_name")
 
     (options, args) = parser.parse_args()
 
-    generate_schema_from_csv_file(options.file_name, options.connection_string, options.table_name,
-                                  delimiter=options.delimiter, no_header=options.no_headers)
+    if options.json_file_name:
+        absolute_json_file_name = os.path.abspath(options.json_file_name)
+        if os.path.exists(absolute_json_file_name):
+            print("Loading options from '%s'" % absolute_json_file_name)
+
+            with open(options.json_file_name, "r") as f:
+                options_dict = json.load(f)
+            pprint.pprint(options_dict)
+
+        else:
+            options_dict = {}
+            options_dict["file_name"] = options.file_name
+            options_dict["connection_string"] = options.connection_string
+            options_dict["table_name"] = options.table_name
+            options_dict["delimiter"] = options.delimiter
+            options_dict["no_headers"] = options.no_headers
+
+            with open(absolute_json_file_name, "w") as fw:
+                json.dump(options_dict, fw, indent=4, separators=(',', ': '))
+    else:
+        options_dict = {}
+        options_dict["file_name"] = options.file_name
+        options_dict["connection_string"] = options.connection_string
+        options_dict["table_name"] = options.table_name
+        options_dict["delimiter"] = options.delimiter
+        options_dict["no_headers"] = options.no_headers
+
+    generate_schema_from_csv_file(options_dict["file_name"], options_dict["connection_string"],
+                                  options_dict["table_name"], options_dict["delimiter"],
+                                  no_header=options_dict["no_headers"])
