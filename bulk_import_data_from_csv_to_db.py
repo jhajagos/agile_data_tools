@@ -161,7 +161,7 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
             columns_to_include = []
             j = 0
             for value in split_line:
-                cleaned_value = clean_string(value)
+                cleaned_value = clean_string(value.decode("utf8", errors="replace"))
                 converted_string = convert_string(cleaned_value, data_type[positions[j]])
                 if converted_string is not None:
                     columns_to_include.append(header[j])
@@ -360,6 +360,7 @@ if __name__ == "__main__":
         options_dict["delimiter"] = options.delimiter
         options_dict["no_headers"] = options.no_headers
 
+
     generate_schema_from_csv_file(options_dict["file_name"], options_dict["connection_string"],
-                                  options_dict["table_name"], options_dict["delimiter"],
+                                  options_dict["table_name"], str(options_dict["delimiter"]),
                                   no_header=options_dict["no_headers"])
