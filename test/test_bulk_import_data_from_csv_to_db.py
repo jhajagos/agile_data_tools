@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.pardir)
 import subprocess
 
-from bulk_import_data_from_csv_to_db import generate_schema_from_csv_file
+from bulk_import_data_from_csv_to_db import generate_schema_from_csv_file, clean_csv_file_for_import
 import unittest
 
 class TestBulkImportData(unittest.TestCase):
@@ -25,3 +25,6 @@ class TestBulkImportData(unittest.TestCase):
         pass
 
 
+    def test_clean_csv(self):
+        file_name = clean_csv_file_for_import(self.file_name)
+        self.assertIsNotNone(file_name)

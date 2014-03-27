@@ -11,7 +11,6 @@
 
 """
 
-import sys
 import re
 from string import join
 import csv
@@ -21,6 +20,30 @@ import os
 import json
 
 from sqlalchemy import Table, Column, Integer, Text, Float, String, DateTime, MetaData, create_engine
+
+
+def clean_header(raw_header):
+    header = []
+    special_characters_map = {"#": "_POUND", "%": "_PERCENT", " ": "_", '"': "",
+                              "&": "AND", "/": "_", "-": "_", ".": "_PERIOD",
+                              "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_", "$": "_DOLLAR"}
+
+    for original_label in raw_header:  # Rewrite column names in a more SQL friendly way
+        label = original_label
+        for split_char in special_characters_map.keys():
+            split_label = label.split(split_char)
+
+            if len(split_label) > 1:
+                label = join(split_label, special_characters_map[split_char])
+
+        label = "_".join([x for x in label.split("_") if len(x) > 0])
+
+        if label[-1] == "_":
+            label = label[:-1]
+
+        header.append(label)
+
+    return header
 
 
 def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_table", delimiter=",", no_header=False):
@@ -47,25 +70,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
         else:
             csv_reader = csv.reader(f, delimiter=delimiter)
             raw_header = csv_reader.next()
-            header = []
-            special_characters_map = {"#": "_POUND", "%": "_PERCENT", " ": "_", '"': "",
-                                      "&": "AND", "/": "_", "-": "_", ".": "_PERIOD",
-                                      "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_", "$": "_DOLLAR"}
-
-            for original_label in raw_header:  # Rewrite column names in a more SQL friendly way
-                label = original_label
-                for split_char in special_characters_map.keys():
-                    split_label = label.split(split_char)
-
-                    if len(split_label) > 1:
-                        label = join(split_label, special_characters_map[split_char])
-
-                label = "_".join([x for x in label.split("_") if len(x) > 0])
-
-                if label[-1] == "_":
-                    label = label[:-1]
-
-                header.append(label)
+            header = clean_header(raw_header)
 
         positions = {}
         data_types = {}
@@ -144,12 +149,10 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
 
 def import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter):
-    engine = create_engine(connection_url)
-    f = open(file_name,'r')
-    f.next()
-    i = 0
 
+    engine = create_engine(connection_url)
     connection = engine.connect()
+    i = 0
 
     with open(file_name, "rb") as f:
         csv_reader = csv.reader(f, delimiter=delimiter)
@@ -221,9 +224,38 @@ def find_most_common_data_type(data_type_hash):
         return dt_max[0]
 
 
-def clean_csv_file_for_import(csv_file_name):
-    pass
+def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
+    "Cleans a CSV file and returns"
 
+    abs_csv_file_for_import = os.path.abspath(csv_file_name)
+    base_path, pure_csv_file_name = os.path.split(abs_csv_file_for_import)
+
+    pure_csv_base_name,extension = os.path.splitext(pure_csv_file_name)
+
+    cleaned_csv_file_name = pure_csv_base_name + "_cleaned.csv"
+
+    abs_cleaned_csv_file_name = os.path.join(base_path, cleaned_csv_file_name)
+    print(abs_cleaned_csv_file_name)
+
+    with open(abs_csv_file_for_import, "rb") as f:
+        with open(abs_cleaned_csv_file_name, "wb") as fw:
+
+            csv_reader = csv.reader(f, delimiter=delimiter)
+            csv_writer = csv.writer(fw)
+
+            i = 0
+
+            if header:
+                header = csv_reader.next()
+                header_cleaned = clean_header(header)
+                csv_writer.writerow(header_cleaned)
+
+            for row in csv_reader:
+                cleaned_row = [clean_string(item) for item in row]
+                csv_writer.writerow(cleaned_row)
+
+                i += 1
+    return abs_cleaned_csv_file_name
 
 def clean_string(string_to_clean):
     """Cleans a string for importing into a sql database"""
