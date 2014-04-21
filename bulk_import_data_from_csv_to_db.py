@@ -46,7 +46,8 @@ def clean_header(raw_header):
     return header
 
 
-def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_table", delimiter=",", no_header=False):
+def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_table", delimiter=",", no_header=False,
+                                  override_header=None, schema_only=None):
     """Takes a csv file and creates a table schema for it"""
     with open(file_name, "rb") as f:
 
@@ -56,21 +57,24 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
             print "Database could not be connected to"
             raise
 
-        if no_header:
-            with open(file_name, "rb") as ft:
-                csv_reader = csv.reader(ft, delimiter=delimiter)
-                row = csv_reader.next()
-
-                header = []
-                for i in range(len(row)):
-                    header += ["V" + str(i)]
-
-            csv_reader = csv.reader(f, delimiter=delimiter)
-
+        if override_header:
+            header = override_header
         else:
-            csv_reader = csv.reader(f, delimiter=delimiter)
-            raw_header = csv_reader.next()
-            header = clean_header(raw_header)
+            if no_header:
+                with open(file_name, "rb") as ft:
+                    csv_reader = csv.reader(ft, delimiter=delimiter)
+                    row = csv_reader.next()
+
+                    header = []
+                    for i in range(len(row)):
+                        header += ["V" + str(i)]
+
+                csv_reader = csv.reader(f, delimiter=delimiter)
+
+            else:
+                csv_reader = csv.reader(f, delimiter=delimiter)
+                raw_header = csv_reader.next()
+                header = clean_header(raw_header)
 
         positions = {}
         data_types = {}
@@ -142,10 +146,15 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
         metadata = MetaData()
         import_table = Table(table_name, metadata, *columns_to_create)
+
         pprint.pprint(columns_to_create)
         metadata.create_all(engine)
 
-        import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter)
+        metadata.create_all(engine)
+        if schema_only:
+           pass
+        else:
+            import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter)
 
 
 def import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter):
@@ -225,7 +234,7 @@ def find_most_common_data_type(data_type_hash):
 
 
 def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
-    "Cleans a CSV file and returns"
+    "Cleans a CSV file and returns a cleaned version"
 
     abs_csv_file_for_import = os.path.abspath(csv_file_name)
     base_path, pure_csv_file_name = os.path.split(abs_csv_file_for_import)
@@ -342,7 +351,31 @@ def get_data_type(string_to_evaluate):
         return DateTime
     else:
         return String
-    
+
+def ensure_options_dict_missing_fields(options_dict):
+
+    option_names = ["file_name", "connection_string", "table_name", "delimiter", "no_headers", "header", "out_file_name",
+                    "schema_only_file_name", "cleaned_csv_field_name"]
+    for option_name in option_names:
+        if option_name not in options_dict:
+            options_dict[option_name] = None
+    return options_dict
+
+
+def set_options(options):
+    options_dict = {}
+    options_dict["file_name"] = options.file_name
+    options_dict["connection_string"] = options.connection_string
+    options_dict["table_name"] = options.table_name
+    options_dict["delimiter"] = options.delimiter
+    options_dict["no_headers"] = options.no_headers
+    options_dict["header"] = options.header.split()
+    options_dict["out_file_name"] = options.out_file_name
+    options_dict["schema_only_file_name"] = options.schema_only_file_name
+    options_dict["cleaned_csv_file_name"] = options.clean_csv_file
+
+    return options_dict
+
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -361,6 +394,27 @@ if __name__ == "__main__":
     parser.add_option("-n", "--noheader",
                       help="Whether there is a header present or not", default=False, dest="no_headers")
 
+    parser.add_option("-x", "--header",
+                      help="Specify the header as a space separated list, .e.d, first_name last_name dob",
+                      default=None, dest="header")
+
+    parser.add_option("-o", "--outfilename",
+                      help="Rather then execute we will write the file as an SQL statement", default=None,
+                      dest="outfile"
+                      )
+
+    parser.add_option("-s", "--schemaonly",
+                      help="Generate the schema with flag 1", default=None, dest="schema_only"
+                      )
+
+    parser.add_option("-l", "--cleanedcsvfilename",
+                      help="Output a cleaned version of the file", dest="cleaned_csv_file name",
+                      )
+
+    parser.add_option("-b", "--bulk_load_file_name",
+                      help="Bulk load a file using database bulk load functionality. The file has to be accessible on the server."
+                      )
+
     parser.add_option("-j", "--jsonfile", default=False, dest="json_file_name")
 
     (options, args) = parser.parse_args()
@@ -375,24 +429,14 @@ if __name__ == "__main__":
             pprint.pprint(options_dict)
 
         else:
-            options_dict = {}
-            options_dict["file_name"] = options.file_name
-            options_dict["connection_string"] = options.connection_string
-            options_dict["table_name"] = options.table_name
-            options_dict["delimiter"] = options.delimiter
-            options_dict["no_headers"] = options.no_headers
+            options_dict = set_options(options)
 
             with open(absolute_json_file_name, "w") as fw:
                 json.dump(options_dict, fw, indent=4, separators=(',', ': '))
     else:
-        options_dict = {}
-        options_dict["file_name"] = options.file_name
-        options_dict["connection_string"] = options.connection_string
-        options_dict["table_name"] = options.table_name
-        options_dict["delimiter"] = options.delimiter
-        options_dict["no_headers"] = options.no_headers
+        options_dict = set_options()
 
-
+    options_dict = ensure_options_dict_missing_fields(options_dict)
     generate_schema_from_csv_file(options_dict["file_name"], options_dict["connection_string"],
                                   options_dict["table_name"], str(options_dict["delimiter"]),
-                                  no_header=options_dict["no_headers"])
+                                  no_header=options_dict["no_headers"], override_header=options_dict["header"])

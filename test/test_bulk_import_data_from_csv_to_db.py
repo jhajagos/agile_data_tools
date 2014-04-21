@@ -21,10 +21,10 @@ class TestBulkImportData(unittest.TestCase):
     def test_loading_table(self):
         generate_schema_from_csv_file(self.file_name, self.db_path, self.table_name)
 
-    def test_command_line_loading(self):
-        pass
-
+    def test_schema_only(self):
+        generate_schema_from_csv_file(self.file_name, self.db_path, self.table_name, schema_only=1)
 
     def test_clean_csv(self):
         file_name = clean_csv_file_for_import(self.file_name)
         self.assertIsNotNone(file_name)
+
