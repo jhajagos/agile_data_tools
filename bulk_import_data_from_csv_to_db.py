@@ -369,7 +369,11 @@ def set_options(options):
     options_dict["table_name"] = options.table_name
     options_dict["delimiter"] = options.delimiter
     options_dict["no_headers"] = options.no_headers
-    options_dict["header"] = options.header.split()
+    if options.header.__class__ == "".__class__:
+        options_dict["header"] = options.header.split()
+    else:
+        options_dict["header"] = options.header
+
     options_dict["out_file_name"] = options.out_file_name
     options_dict["schema_only_file_name"] = options.schema_only_file_name
     options_dict["cleaned_csv_file_name"] = options.clean_csv_file
