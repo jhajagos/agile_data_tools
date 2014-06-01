@@ -59,6 +59,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
         if override_header:
             header = override_header
+            csv_reader = csv.reader(f, delimiter=delimiter)
         else:
             if no_header:
                 with open(file_name, "rb") as ft:
