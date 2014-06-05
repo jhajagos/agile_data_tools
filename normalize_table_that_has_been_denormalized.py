@@ -11,6 +11,14 @@ def main():
     pass
 
 
+def get_base_pattern(field_name_pattern):
+    if field_name_pattern[-1] == " " or field_name_pattern[-1] == "_":
+        base_field_name = field_name_pattern[:-1]
+    else:
+        base_field_name = field_name_pattern
+
+    return base_field_name
+
 def create_table_that_normalize_repeated_column(table_name, field_name_pattern, new_table_name, engine,
                                                 identifier_column="id", mapped_identifier_column="mapped_id",
                                                 sequence_field_name="sequence_id", schema=None):
@@ -29,10 +37,7 @@ def create_table_that_normalize_repeated_column(table_name, field_name_pattern, 
     columns_to_add = []
     columns_to_add += [sa.Column(mapped_identifier_column, data_type_id_field)]
 
-    if field_name_pattern[-1] == " " or field_name_pattern[-1] == "_":
-        base_field_name = field_name_pattern[:-1]
-    else:
-        base_field_name = field_name_pattern
+    base_field_name = get_base_pattern(field_name_pattern)
 
     columns_to_add += [sa.Column(sequence_field_name, sa.Integer())]
 
