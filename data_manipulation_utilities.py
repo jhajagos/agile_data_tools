@@ -138,8 +138,8 @@ def get_columns_that_appear_to_repeat(list_of_fields, search_pattern):
 
 __author__ = 'janos'
 
-"""
-This program is used to stitch / join two tables together into a third table.
+def stitch_two_tables(table_1, id_field_1, table_2, id_field_2, new_table, engine, columns_to_exclude_1=[], columns_to_exclude_2=[], prefixes_column_names=("t1", "t2")):
+    """This program is used to stitch / join two tables together into a third table.
 As this is a common operation the goal is to with several annoyances in SQL
 
 Handling fields that repeat
@@ -148,10 +148,7 @@ Chaining together multiple joins
 
 The script using the introspective /relfective ability of SQLAlchemy to
 
-"""
-
-
-def stitch(table_1, id_field_1, table_2, id_field_2, new_table, engine, columns_to_exclude_1=[], columns_to_exclude_2=[]):
+    """
     metadata = reflect_metadata(engine, schema=None)
     t1_obj = metadata.tables[table_1]
     t2_obj = metadata.tables[table_2]
@@ -159,3 +156,57 @@ def stitch(table_1, id_field_1, table_2, id_field_2, new_table, engine, columns_
     id_field_1_obj = t1_obj.columns[id_field_1]
     id_field_2_obj = t2_obj.columns[id_field_2]
 
+    column_names_that_repeat = []
+
+    column_to_include_t1 = []
+    column_to_include_t2 = []
+
+    column_types_dict1 = get_column_names_with_types_dict(table_1, metadata)
+    column_types_dict2 = get_column_names_with_types_dict(table_2, metadata)
+    column_name_maps_t1 = {}
+    column_name_maps_t2 = {}
+
+    column_names_t1 = t1_obj.columns.keys()
+    column_names_t2 = t2_obj.columns.keys()
+
+    s_t1 = set(column_names_t1)
+    s_t2 = set(column_names_t2)
+
+    s_intersect_tc = s_t1.intersection(s_t2)
+    column_names_that_repeat = list(s_intersect_tc)
+
+    for column_name in column_names_t1:
+        if column_name not in columns_to_exclude_1:
+            column_to_include_t1 += [column_name]
+            if column_name in column_names_that_repeat:
+                column_name_maps_t1[column_name] = prefixes_column_names[0] + column_name
+
+    for column_name in column_names_t2:
+        if column_name not in columns_to_exclude_2:
+            column_to_include_t2 += [column_name]
+            if column_name in column_names_that_repeat:
+                column_name_maps_t2[column_name] = prefixes_column_names[1] + column_name
+
+    new_columns_table = []
+    for column_name in column_to_include_t1:
+        if column_name in column_name_maps_t1:
+            new_column_name = column_name_maps_t1[column_name]
+        else:
+            new_column_name = column_name
+
+        new_type = column_types_dict1[column_name]
+        new_columns_table += [sa.Column(new_column_name, new_type)]
+
+    for column_name in column_to_include_t2:
+        if column_name in column_name_maps_t2:
+            new_column_name = column_name_maps_t2[column_name]
+        else:
+            new_column_name = column_name
+
+        new_type = column_types_dict2[column_name]
+        new_columns_table += [sa.Column(new_column_name,  new_type)]
+
+    new_table = sa.Table(new_table, metadata, *new_columns_table)
+    metadata.create_all()
+
+    #TODO: Add the select into statement; and the join statements
