@@ -3,7 +3,6 @@ __author__ = 'janos'
 import sys
 import os
 sys.path.append(os.path.pardir)
-import subprocess
 
 from bulk_import_data_from_csv_to_db import generate_schema_from_csv_file, clean_csv_file_for_import
 import unittest

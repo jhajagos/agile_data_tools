@@ -9,7 +9,8 @@ import os
 
 from sqlalchemy import INTEGER
 
-import normalize_table_that_has_been_denormalized as ntd
+import data_manipulation_utilities as ntd
+
 
 class TestGetColumnsThatRepeatFromDatabase(unittest.TestCase):
     def setUp(self):

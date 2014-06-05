@@ -1,14 +1,7 @@
-__author__ = 'Janos Hajagos'
-
-# Taking a table detect fields that repeat and then generate additional tables that denormalize the table
-
-
+__author__ = 'janos'
 
 import sqlalchemy as sa
 import re
-
-def main():
-    pass
 
 
 def get_base_pattern(field_name_pattern):
@@ -18,6 +11,7 @@ def get_base_pattern(field_name_pattern):
         base_field_name = field_name_pattern
 
     return base_field_name
+
 
 def create_table_that_normalize_repeated_column(table_name, field_name_pattern, new_table_name, engine,
                                                 identifier_column="id", mapped_identifier_column="mapped_id",
@@ -50,14 +44,10 @@ def create_table_that_normalize_repeated_column(table_name, field_name_pattern, 
 
 
 def create_insert_for_column_that_repeats(new_table, old_table, metadata, identifier_to_map, repeated_column,
-                                          sequence_id, mapped_identifier, mapped_column_that_repeats, sequence_column_name):
+                                          sequence_id, mapped_identifier, mapped_column_that_repeats,
+                                          sequence_column_name):
     """
-    In [34]: print(dx.insert().from_select(["mapped_id","dx","sequence_id"], sa.sql.
-select([dn.c.id, dn.c.dx1, sa.sql.literal_column("1")]).where(dn.c.dx1 != None))
-INSERT INTO diagnosis (mapped_id, dx, sequence_id) SELECT denormalized_table.id,
- denormalized_table.dx1, 1
-FROM denormalized_table
-WHERE denormalized_table.dx1 IS NOT NULL
+
     """
 
     new_table = metadata.tables[new_table]
@@ -146,6 +136,26 @@ def get_columns_that_appear_to_repeat(list_of_fields, search_pattern):
     list_of_fields_match.sort(key=lambda x: x[1])
     return list_of_fields_match
 
+__author__ = 'janos'
 
-if __name__ == "__main__":
-    pass
+"""
+This program is used to stitch / join two tables together into a third table.
+As this is a common operation the goal is to with several annoyances in SQL
+
+Handling fields that repeat
+Excluding certain fields
+Chaining together multiple joins
+
+The script using the introspective /relfective ability of SQLAlchemy to
+
+"""
+
+
+def stitch(table_1, id_field_1, table_2, id_field_2, new_table, engine, columns_to_exclude_1=[], columns_to_exclude_2=[]):
+    metadata = reflect_metadata(engine, schema=None)
+    t1_obj = metadata.tables[table_1]
+    t2_obj = metadata.tables[table_2]
+
+    id_field_1_obj = t1_obj.columns[id_field_1]
+    id_field_2_obj = t2_obj.columns[id_field_2]
+
