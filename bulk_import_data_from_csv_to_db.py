@@ -353,6 +353,7 @@ def get_data_type(string_to_evaluate):
     else:
         return String
 
+
 def ensure_options_dict_missing_fields(options_dict):
 
     option_names = ["file_name", "connection_string", "table_name", "delimiter", "no_headers", "header", "out_file_name",
