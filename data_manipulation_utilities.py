@@ -56,7 +56,7 @@ def create_insert_for_column_that_repeats(new_table, old_table, metadata, identi
     identifier_column_obj = old_table.columns[identifier_to_map]
     column_that_repeats = old_table.columns[repeated_column]
 
-    select_sql_expr = sa.sql.select([identifier_column_obj, column_that_repeats, sa.sql.literal_column(str(sequence_id))]).where(column_that_repeats != None)
+    select_sql_expr = sa.sql.select([identifier_column_obj, sa.sql.literal_column(str(sequence_id)), column_that_repeats]).where(column_that_repeats != None)
     insert_sql_expr = new_table.insert().from_select([mapped_identifier, sequence_column_name, mapped_column_that_repeats], select_sql_expr)
 
     return insert_sql_expr
@@ -70,15 +70,19 @@ def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, 
     metadata = reflect_metadata(engine, schema=schema)
     column_names = get_column_names_from_table(table_name, metadata)
     column_names_that_repeat = get_columns_that_appear_to_repeat(column_names, search_pattern=pattern_to_match)
+
     new_table_obj = create_table_that_normalize_repeated_column(table_name, pattern_to_match, new_table_name, engine,
                                                                 identifier_column, identifier_column_that_maps,
                                                                 sequence_field_name, schema)
+
     metadata = reflect_metadata(engine, schema=schema)
     sql_to_execute = []
+    base_field_name = get_base_pattern(pattern_to_match)
     for repeat_column in column_names_that_repeat:
+
         sql_expr = create_insert_for_column_that_repeats(new_table_name, table_name, metadata, identifier_column,
-                                                         repeat_column[0], repeat_column[1], identifier_column_that_maps,
-                                                         pattern_to_match, sequence_field_name)
+                                                     repeat_column[0], repeat_column[1], identifier_column_that_maps,
+                                                     base_field_name, sequence_field_name)
 
         sql_to_execute += [str(sql_expr)]
 
@@ -136,7 +140,6 @@ def get_columns_that_appear_to_repeat(list_of_fields, search_pattern):
     list_of_fields_match.sort(key=lambda x: x[1])
     return list_of_fields_match
 
-__author__ = 'janos'
 
 def stitch_two_tables(table_1, id_field_1, table_2, id_field_2, new_table, engine, columns_to_exclude_1=[], columns_to_exclude_2=[], prefixes_column_names=("t1", "t2")):
     """This program is used to stitch / join two tables together into a third table.

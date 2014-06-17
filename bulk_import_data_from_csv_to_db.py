@@ -267,6 +267,7 @@ def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
                 i += 1
     return abs_cleaned_csv_file_name
 
+
 def clean_string(string_to_clean):
     """Cleans a string for importing into a sql database"""
     # Right now we only preprocess money string
