@@ -7,6 +7,7 @@ import json
 import pprint
 import os
 
+
 def main(table_name, new_table_name, column_name_pattern, identifier_column, identifier_column_that_maps,
          sequence_field_name, connection_url, schema=None):
 
@@ -14,6 +15,7 @@ def main(table_name, new_table_name, column_name_pattern, identifier_column, ide
 
     dmu.normalize_columns_that_repeat(table_name, new_table_name, column_name_pattern,  engine, identifier_column,
                                       identifier_column_that_maps, sequence_field_name, schema)
+
 
 def set_options(options):
     options_dict = {}
@@ -28,6 +30,7 @@ def set_options(options):
     options_dict["column_name_pattern"] = options.column_name_pattern
 
     return options_dict
+
 
 def load_options(json_file_name):
     with open(json_file_name, "r") as f:

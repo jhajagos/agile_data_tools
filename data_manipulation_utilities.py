@@ -50,7 +50,12 @@ def create_insert_for_column_that_repeats(new_table, old_table, metadata, identi
 
     """
 
-    new_table = metadata.tables[new_table]
+    if metadata.schema is None:
+        table_prefix = ""
+    else:
+        table_prefix = metadata.schema + "."
+
+    new_table = metadata.tables[table_prefix + new_table]
     old_table = metadata.tables[old_table]
 
     identifier_column_obj = old_table.columns[identifier_to_map]
@@ -67,7 +72,8 @@ def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, 
 
     """Normalize a table by looking for patterns that repeat in the table columns based on a pattern"""
     #TODO: pattern_to_match is not robust to ["dx_" or "dx "] need to strip these characters
-    metadata = reflect_metadata(engine, schema=schema)
+    metadata = reflect_metadata(engine, schema)
+
     column_names = get_column_names_from_table(table_name, metadata)
     column_names_that_repeat = get_columns_that_appear_to_repeat(column_names, search_pattern=pattern_to_match)
 
@@ -75,7 +81,8 @@ def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, 
                                                                 identifier_column, identifier_column_that_maps,
                                                                 sequence_field_name, schema)
 
-    metadata = reflect_metadata(engine, schema=schema)
+    metadata = reflect_metadata(engine, schema)
+
     sql_to_execute = []
     base_field_name = get_base_pattern(pattern_to_match)
     for repeat_column in column_names_that_repeat:
@@ -100,8 +107,8 @@ def get_data_table(table_name, metadata):
 
 
 def reflect_metadata(engine, schema=None):
-    meta = sa.MetaData(engine)
-    meta.reflect()
+    meta = sa.MetaData(engine, schema=schema)
+    meta.reflect(schema=schema)
     return meta
 
 
