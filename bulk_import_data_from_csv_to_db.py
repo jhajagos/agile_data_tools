@@ -379,7 +379,7 @@ def set_options(options):
 
     options_dict["out_file_name"] = options.out_file_name
     options_dict["schema_only_file_name"] = options.schema_only_file_name
-    options_dict["cleaned_csv_file_name"] = options.clean_csv_file
+    options_dict["cleaned_csv_file_name"] = options.clean_csv_file_name
 
     return options_dict
 
