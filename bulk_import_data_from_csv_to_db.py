@@ -358,7 +358,7 @@ def get_data_type(string_to_evaluate):
 def ensure_options_dict_missing_fields(options_dict):
 
     option_names = ["file_name", "connection_string", "table_name", "delimiter", "no_headers", "header", "out_file_name",
-                    "schema_only_file_name", "cleaned_csv_field_name"]
+                    "schema_only_file_name", "cleaned_csv_file_name"]
     for option_name in option_names:
         if option_name not in options_dict:
             options_dict[option_name] = None
