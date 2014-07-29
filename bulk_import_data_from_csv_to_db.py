@@ -411,7 +411,7 @@ if __name__ == "__main__":
                       )
 
     parser.add_option("-s", "--schemaonly",
-                      help="Generate the schema with flag 1", default=None, dest="schema_only"
+                      help="Generate the schema with flag 1", default=None, dest="schema_only_file_name"
                       )
 
     parser.add_option("-l", "--cleanedcsvfilename",
