@@ -358,7 +358,7 @@ def get_data_type(string_to_evaluate):
 def ensure_options_dict_missing_fields(options_dict):
 
     option_names = ["file_name", "connection_string", "table_name", "delimiter", "no_headers", "header", "out_file_name",
-                    "schema_only_file_name", "cleaned_csv_field_name"]
+                    "schema_only_file_name", "cleaned_csv_file_name"]
     for option_name in option_names:
         if option_name not in options_dict:
             options_dict[option_name] = None
@@ -379,7 +379,7 @@ def set_options(options):
 
     options_dict["out_file_name"] = options.out_file_name
     options_dict["schema_only_file_name"] = options.schema_only_file_name
-    options_dict["cleaned_csv_file_name"] = options.clean_csv_file
+    options_dict["cleaned_csv_file_name"] = options.cleaned_csv_file_name
 
     return options_dict
 
@@ -407,15 +407,15 @@ if __name__ == "__main__":
 
     parser.add_option("-o", "--outfilename",
                       help="Rather then execute we will write the file as an SQL statement", default=None,
-                      dest="outfile"
+                      dest="out_file_name"
                       )
 
     parser.add_option("-s", "--schemaonly",
-                      help="Generate the schema with flag 1", default=None, dest="schema_only"
+                      help="Generate the schema with flag 1", default=None, dest="schema_only_file_name"
                       )
 
     parser.add_option("-l", "--cleanedcsvfilename",
-                      help="Output a cleaned version of the file", dest="cleaned_csv_file name",
+                      help="Output a cleaned version of the file", default=None, dest="cleaned_csv_file_name",
                       )
 
     parser.add_option("-b", "--bulk_load_file_name",
