@@ -415,7 +415,7 @@ if __name__ == "__main__":
                       )
 
     parser.add_option("-l", "--cleanedcsvfilename",
-                      help="Output a cleaned version of the file", dest="cleaned_csv_file name",
+                      help="Output a cleaned version of the file", default=None, dest="cleaned_csv_file name",
                       )
 
     parser.add_option("-b", "--bulk_load_file_name",
