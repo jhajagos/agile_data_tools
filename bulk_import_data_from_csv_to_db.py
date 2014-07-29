@@ -407,7 +407,7 @@ if __name__ == "__main__":
 
     parser.add_option("-o", "--outfilename",
                       help="Rather then execute we will write the file as an SQL statement", default=None,
-                      dest="outfile"
+                      dest="out_file_name"
                       )
 
     parser.add_option("-s", "--schemaonly",
