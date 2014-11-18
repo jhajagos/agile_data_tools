@@ -16,7 +16,6 @@ def main(in_files, has_header=True, out_file="simple_cat_result.txt", add_file_n
 
                             if i == 0 and j == 0:
                                 if add_file_name:
-                                    print("hi")
                                     line = line.lstrip()[:-1] + "," + "file_name" + "\n"
 
                             else:

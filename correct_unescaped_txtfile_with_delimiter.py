@@ -2,6 +2,7 @@ __author__ = 'jhajagos'
 import sys
 import csv
 
+
 def main(file_name, delimiter):
 
     with open(file_name, "r") as f:
