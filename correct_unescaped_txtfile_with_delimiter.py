@@ -3,7 +3,7 @@ import sys
 import csv
 
 
-def main(file_name, delimiter):
+def main(file_name, delimiter="|"):
 
     with open(file_name, "r") as f:
 
@@ -35,4 +35,7 @@ def main(file_name, delimiter):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2])
+    else:
+        main(sys.argv[1])
