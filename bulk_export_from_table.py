@@ -86,7 +86,7 @@ if __name__ == "__main__":
             split_dict[split_restrictions[i*2]] = split_restrictions[i*2 + 1]
         restrictions = split_dict
 
-    if args.file_name is not None:
+    if args.file_name is None:
         file_name = table_name + ".csv"
     else:
         file_name = args.file_name
