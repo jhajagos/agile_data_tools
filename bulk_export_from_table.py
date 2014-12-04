@@ -73,7 +73,6 @@ if __name__ == "__main__":
     parser.add_argument("--connection_uri", dest="connection_uri", action="store")
     args = parser.parse_args()
 
-
     connection_uri = args.connection_uri
     table_name = args.table_name
     schema = args.schema
