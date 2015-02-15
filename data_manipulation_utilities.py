@@ -45,8 +45,7 @@ def create_table_that_normalize_repeated_column(table_name, field_name_pattern, 
             additional_column_dict_mapping[additional_column] = columns_dict[additional_column_that_repeats[0][0]]
 
         for additional_column in additional_field_list:
-
-            columns_to_add += [sa.Column(additional_column, additional_column_dict_mapping[additional_column])]
+            columns_to_add += [sa.Column(get_base_pattern(additional_column), additional_column_dict_mapping[additional_column])]
 
     new_table = sa.Table(new_table_name, metadata, *columns_to_add)
     metadata.create_all()
@@ -83,7 +82,8 @@ def create_insert_for_column_that_repeats(new_table, old_table, metadata, identi
 
     if mapped_additional_field_list is not None:
         for mapped_additional_field in mapped_additional_field_list:
-            column_list += [mapped_additional_field]
+            mapped_additional_field_that_repeats = old_table.columns[mapped_additional_field]
+            column_list += [mapped_additional_field_that_repeats]
 
 
     select_sql_expr = sa.sql.select(column_list).where(column_that_repeats != None)
@@ -111,7 +111,6 @@ def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, 
 
     sql_to_execute = []
     base_field_name = get_base_pattern(pattern_to_match)
-
 
     if additional_field_list is not None:
         base_additional_field_list = []

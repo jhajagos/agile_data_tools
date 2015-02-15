@@ -28,7 +28,10 @@ def set_options(options):
     options_dict["sequence_field_name"] = options.sequence_field_name
     options_dict["schema"] = options.schema
     options_dict["column_name_pattern"] = options.column_name_pattern
-    options_dict["additional_field_list"] = options.additional_field_list
+    if options.additional_field_list is not None:
+        options_dict["additional_field_list"] = options.additional_field_list.split(",")
+    else:
+        options_dict["additional_field_list"] = None
 
     return options_dict
 
@@ -68,7 +71,7 @@ if __name__ == "__main__":
                       help="Pattern to match to fine repeated columns e.g., dx_")
     parser.add_option("-j", "--json_file_name", dest="json_file_name",
                       help="The name of the JSON file that serializes and stores or loads the options")
-    parser.add_option("-a", "--additional_fields", "A common separated list of additional fields which will be included",
+    parser.add_option("-a", "--additional_fields", help="A common separated list of additional fields which will be included",
                       dest="additional_field_list", default=None
                       )
 
@@ -96,6 +99,8 @@ if __name__ == "__main__":
     od = options_dict
 
     main(od["table_name"], od["new_table_name"], od["column_name_pattern"], od["identity_column_name"],
-         od["mapped_name_identity_column"], od["sequence_field_name"], od["connection_string"], od["schema"])
+         od["mapped_name_identity_column"], od["sequence_field_name"], od["connection_string"], od["schema"],
+         od["additional_field_list"]
+         )
 
 
