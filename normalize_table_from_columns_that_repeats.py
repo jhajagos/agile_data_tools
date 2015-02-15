@@ -9,12 +9,12 @@ import os
 
 
 def main(table_name, new_table_name, column_name_pattern, identifier_column, identifier_column_that_maps,
-         sequence_field_name, connection_url, schema=None):
+         sequence_field_name, connection_url, schema=None, additional_column_list=None):
 
     engine = sa.create_engine(connection_url)
 
     dmu.normalize_columns_that_repeat(table_name, new_table_name, column_name_pattern,  engine, identifier_column,
-                                      identifier_column_that_maps, sequence_field_name, schema)
+                                      identifier_column_that_maps, sequence_field_name, schema, additional_column_list)
 
 
 def set_options(options):
@@ -28,6 +28,7 @@ def set_options(options):
     options_dict["sequence_field_name"] = options.sequence_field_name
     options_dict["schema"] = options.schema
     options_dict["column_name_pattern"] = options.column_name_pattern
+    options_dict["additional_field_list"] = options.additional_field_list
 
     return options_dict
 
@@ -42,7 +43,7 @@ def ensure_options_dict_missing_fields(options_dict={}):
 
     option_names = ["table_name", "new_table_name", "identity_column_name", "mapped_name_identity_column",
                     "connection_string", "header", "out_file_name", "sequence_field_name", "schema",
-                    "column_name_pattern"]
+                    "column_name_pattern", "additional_field_list"]
 
     for option_name in option_names:
         if option_name not in options_dict:
@@ -67,6 +68,9 @@ if __name__ == "__main__":
                       help="Pattern to match to fine repeated columns e.g., dx_")
     parser.add_option("-j", "--json_file_name", dest="json_file_name",
                       help="The name of the JSON file that serializes and stores or loads the options")
+    parser.add_option("-a", "--additional_fields", "A common separated list of additional fields which will be included",
+                      dest="additional_field_list", default=None
+                      )
 
     (options, args) = parser.parse_args()
 

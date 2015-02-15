@@ -15,7 +15,8 @@ def get_base_pattern(field_name_pattern):
 
 def create_table_that_normalize_repeated_column(table_name, field_name_pattern, new_table_name, engine,
                                                 identifier_column="id", mapped_identifier_column="mapped_id",
-                                                sequence_field_name="sequence_id", schema=None):
+                                                sequence_field_name="sequence_id", schema=None,
+                                                additional_field_list=None):
 
     metadata = reflect_metadata(engine, schema)
 
@@ -37,6 +38,16 @@ def create_table_that_normalize_repeated_column(table_name, field_name_pattern, 
 
     columns_to_add += [sa.Column(base_field_name, data_type)]
 
+    if additional_field_list is not None:
+        additional_column_dict_mapping = {}
+        for additional_column in additional_field_list:
+            additional_column_that_repeats = get_columns_that_appear_to_repeat(columns, additional_column)
+            additional_column_dict_mapping[additional_column] = columns_dict[additional_column_that_repeats[0][0]]
+
+        for additional_column in additional_field_list:
+
+            columns_to_add += [sa.Column(additional_column, additional_column_dict_mapping[additional_column])]
+
     new_table = sa.Table(new_table_name, metadata, *columns_to_add)
     metadata.create_all()
 
@@ -45,9 +56,10 @@ def create_table_that_normalize_repeated_column(table_name, field_name_pattern, 
 
 def create_insert_for_column_that_repeats(new_table, old_table, metadata, identifier_to_map, repeated_column,
                                           sequence_id, mapped_identifier, mapped_column_that_repeats,
-                                          sequence_column_name):
+                                          sequence_column_name, mapped_additional_field_list=None,
+                                          additional_field_list=None):
     """
-
+    A function for creating an insert statement for the denormalized table
     """
 
     if metadata.schema is None:
@@ -61,14 +73,28 @@ def create_insert_for_column_that_repeats(new_table, old_table, metadata, identi
     identifier_column_obj = old_table.columns[identifier_to_map]
     column_that_repeats = old_table.columns[repeated_column]
 
-    select_sql_expr = sa.sql.select([identifier_column_obj, sa.sql.literal_column(str(sequence_id)), column_that_repeats]).where(column_that_repeats != None)
-    insert_sql_expr = new_table.insert().from_select([mapped_identifier, sequence_column_name, mapped_column_that_repeats], select_sql_expr)
+    column_list = [identifier_column_obj, sa.sql.literal_column(str(sequence_id)), column_that_repeats]
+
+    insert_field_list = [mapped_identifier, sequence_column_name, mapped_column_that_repeats]
+
+    if additional_field_list is not None:
+        for additional_field in additional_field_list:
+            insert_field_list += [additional_field]
+
+    if mapped_additional_field_list is not None:
+        for mapped_additional_field in mapped_additional_field_list:
+            column_list += [mapped_additional_field]
+
+
+    select_sql_expr = sa.sql.select(column_list).where(column_that_repeats != None)
+    insert_sql_expr = new_table.insert().from_select(insert_field_list, select_sql_expr)
 
     return insert_sql_expr
 
 
 def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, engine, identifier_column="id",
-                                 identifier_column_that_maps="mapped_id", sequence_field_name="sequence_id", schema=None):
+                                 identifier_column_that_maps="mapped_id", sequence_field_name="sequence_id", schema=None,
+                                 additional_field_list=None):
 
     """Normalize a table by looking for patterns that repeat in the table columns based on a pattern"""
     #TODO: pattern_to_match is not robust to ["dx_" or "dx "] need to strip these characters
@@ -79,24 +105,41 @@ def normalize_columns_that_repeat(table_name, new_table_name, pattern_to_match, 
 
     new_table_obj = create_table_that_normalize_repeated_column(table_name, pattern_to_match, new_table_name, engine,
                                                                 identifier_column, identifier_column_that_maps,
-                                                                sequence_field_name, schema)
+                                                                sequence_field_name, schema, additional_field_list)
 
     metadata = reflect_metadata(engine, schema)
 
     sql_to_execute = []
     base_field_name = get_base_pattern(pattern_to_match)
+
+
+    if additional_field_list is not None:
+        base_additional_field_list = []
+        for additional_field in additional_field_list:
+            base_additional_field_list += [get_base_pattern(additional_field)]
+    else:
+        base_additional_field_list = None
+
+    i = 1
     for repeat_column in column_names_that_repeat:
+        additional_fields_that_repeat = []
+        if additional_field_list is not None:
+            for additional_field in additional_field_list:
+                additional_fields_that_repeat += [additional_field + str(i)]
 
         sql_expr = create_insert_for_column_that_repeats(new_table_name, table_name, metadata, identifier_column,
-                                                     repeat_column[0], repeat_column[1], identifier_column_that_maps,
-                                                     base_field_name, sequence_field_name)
+                                                         repeat_column[0], repeat_column[1], identifier_column_that_maps,
+                                                         base_field_name, sequence_field_name, additional_fields_that_repeat,
+                                                         base_additional_field_list
+                                                         )
 
+        i += 1
         sql_to_execute += [str(sql_expr)]
 
-    connection = engine.connect()
+    engine.connect()
 
     for sql_statement in sql_to_execute:
-        print(sql_statement)
+        print(sql_statement + ";\n")
         engine.execute(sql_statement)
 
     return sql_to_execute
