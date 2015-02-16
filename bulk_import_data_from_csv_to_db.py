@@ -337,7 +337,7 @@ def convert_string(string_to_convert,data_type):
     
 def get_data_type(string_to_evaluate):
     """Take a string and returns a SQLAlchemy data type class"""
-    re_integer = re.compile(r"[0-9]+$")
+    re_integer = re.compile(r"[1-9][0-9]*")
     re_float = re.compile(r"([0-9]+\.[0-9]+[eE](\+|\-)?[0-9]+|[0-9]+[eE](\+|\-)?[0-9]+|[0-9]+\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[0-9]+)$")                           
     re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
     re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
