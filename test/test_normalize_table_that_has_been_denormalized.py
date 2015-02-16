@@ -59,6 +59,8 @@ class TestGetColumnsThatAppearToRepeat(unittest.TestCase):
     def setUp(self):
         self.field_names = ["id", "identifier", "DX 1", "DX 2", "DX 3", "Proc_Code_2", "Proc_Code_1"]
 
+        self.more_difficult_field_name = ["id", "identifier", "Other Procedure  (ICD) Code 1", "Other Procedure  (ICD) Code 2", "Other Procedure  (ICD) Code 3"]
+
     def test_identify_columns_that_repeat(self):
         columns_that_repeat1 = ntd.get_columns_that_appear_to_repeat(self.field_names, search_pattern="DX ")
         self.assertTrue(len(columns_that_repeat1))
@@ -77,3 +79,7 @@ class TestGetColumnsThatAppearToRepeat(unittest.TestCase):
         self.assertEquals(int, first_element2[1].__class__)
 
         self.assertEquals(1, first_element2[1])
+
+    def test_more_difficult_column_names_that_repeat(self):
+        columns_that_repeat = ntd.get_columns_that_appear_to_repeat(self.more_difficult_field_name, "Other Procedure  (ICD) Code ")
+        self.assertTrue(len(columns_that_repeat))

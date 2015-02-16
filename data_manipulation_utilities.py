@@ -174,7 +174,7 @@ def get_columns_that_appear_to_repeat(list_of_fields, search_pattern):
     """Matches columns that have a regular pattern that has a number suffix"""
     string_to_suffix = r"([0-9]*$)"
 
-    re_search_pattern_string = search_pattern + string_to_suffix
+    re_search_pattern_string = re.escape(search_pattern) + string_to_suffix
     re_search_pattern = re.compile(re_search_pattern_string)
 
     list_of_fields_match = []
