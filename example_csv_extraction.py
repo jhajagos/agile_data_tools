@@ -9,5 +9,5 @@ for samfile in samfiles:
     file_name = os.path.join("E:\\data\\xlaev transciptome\\", samfile)
     table_name = samfile.split(".")[0]
     generate_schema_from_csv_file(file_name,
-                              "postgresql+pg8000://janos:8cranb@192.168.93.132/janos",
+                              "postgresql+pg8000://janos:@192.168.93.132/janos",
                                 table_name, delimiter="\t", no_header=True)
