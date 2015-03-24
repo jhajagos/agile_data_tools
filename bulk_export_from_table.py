@@ -1,7 +1,6 @@
 __author__ = 'janos'
 
 import csv
-import json
 import argparse
 
 import sqlalchemy as sa
@@ -18,11 +17,11 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
         print "Database could not be connected to"
         raise
 
-
     meta = sa.MetaData(engine, schema=schema)
     meta.reflect(schema=schema)
 
     tables = meta.tables.keys()
+
     if table_name in tables:
 
         table_obj = meta.tables[table_name]
@@ -53,7 +52,7 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                 for cell in row:
                     if cell is not None:
                         if cell.__class__ == u"".__class__:
-                            cell =cell.encode("ascii", errors="replace")
+                            cell = cell.encode("ascii", errors="replace")
                     row_to_write += [cell]
                 csv_writer.writerow(row_to_write)
 

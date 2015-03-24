@@ -26,7 +26,8 @@ def clean_header(raw_header):
     header = []
     special_characters_map = {"#": "_POUND", "%": "_PERCENT", " ": "_", '"': "",
                               "&": "AND", "/": "_", "-": "_", ".": "_PERIOD",
-                              "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_", "$": "_DOLLAR", ",": "_"}
+                              "?": "_QUESTION", "+": "_PLUS", "(": "_", ")": "_", "$": "_DOLLAR", ",": "_",
+                              '\n': "_"}
 
     for original_label in raw_header:  # Rewrite column names in a more SQL friendly way
         label = original_label
