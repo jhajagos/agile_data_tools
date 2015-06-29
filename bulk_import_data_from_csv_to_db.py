@@ -236,7 +236,7 @@ def find_most_common_data_type(data_type_hash):
 
 
 def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
-    "Cleans a CSV file and returns a cleaned version"
+    """Cleans a CSV file and returns a cleaned version"""
 
     abs_csv_file_for_import = os.path.abspath(csv_file_name)
     base_path, pure_csv_file_name = os.path.split(abs_csv_file_for_import)
@@ -272,7 +272,7 @@ def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
 def clean_string(string_to_clean):
     """Cleans a string for importing into a sql database"""
     # Right now we only preprocess money string
-    re_money =  re.compile(r"\$[0-9,.]+")
+    re_money = re.compile(r"\$[0-9,.]+")
     re_float = re.compile(r"-?([0-9+]*\.?|[eE]?|[0-9]?)+$")
     re_quotes = re.compile(r'^".*"$')
     re_us_date_format = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$")
@@ -319,12 +319,12 @@ def clean_string(string_to_clean):
     return string_to_clean
 
 
-def convert_string(string_to_convert,data_type):
+def convert_string(string_to_convert, data_type):
     if "'" in string_to_convert:
-        string_to_convert = join(string_to_convert.split("'"),"''")
+        string_to_convert = join(string_to_convert.split("'"), "''")
     
     if "%" in string_to_convert:
-        string_to_convert = join(string_to_convert.split("%"),"%%")
+        string_to_convert = join(string_to_convert.split("%"), "%%")
         
     if string_to_convert == "":
         return "NULL"
@@ -338,20 +338,20 @@ def convert_string(string_to_convert,data_type):
     
 def get_data_type(string_to_evaluate):
     """Take a string and returns a SQLAlchemy data type class"""
-    re_integer = re.compile(r"[1-9][0-9]*")
-    re_float = re.compile(r"([1-9][0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[1-9][0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
+    re_integer = re.compile(r"^([1-9][0-9]*$|0$)")
+    re_float = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
     re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
     re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
     if string_to_evaluate == "":
         return None
-    elif re_integer.match(string_to_evaluate):
-        return Integer
     elif re_odbc_date.match(string_to_evaluate):
         return DateTime
-    elif re_float.match(string_to_evaluate):
-        return Float
     elif re_date.match(string_to_evaluate):
         return DateTime
+    elif re_integer.match(string_to_evaluate):
+        return Integer
+    elif re_float.match(string_to_evaluate):
+        return Float
     else:
         return String
 
