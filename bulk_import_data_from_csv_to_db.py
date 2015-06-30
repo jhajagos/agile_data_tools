@@ -48,7 +48,7 @@ def clean_header(raw_header):
 
 
 def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_table", delimiter=",", no_header=False,
-                                  override_header=None, schema_only=None):
+                                  override_header=None, schema_only=None, schema=None, drop_table_first=False, no_primary_key=False):
     """Takes a csv file and creates a table schema for it"""
     with open(file_name, "rb") as f:
 
@@ -111,7 +111,10 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
             data_type[column_name] = find_data_type_by_precedence(data_types[column_name])
 
         if "ID" not in [column_name.upper() for column_name in header]:
-            columns_to_create = [Column('id', Integer, primary_key=True, autoincrement=True)]
+            if not no_primary_key:
+                columns_to_create = [Column('id', Integer, primary_key=True, autoincrement=True)]
+            else:
+                columns_to_create = []
         else:
             columns_to_create = []
 
@@ -146,7 +149,19 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
             columns_to_create.append(Column(column_name, data_type[column_name]))
 
-        metadata = MetaData()
+        if not drop_table_first:
+            metadata = MetaData(schema=schema)
+        else:
+            metadata = MetaData(schema, reflect=True)
+
+            table_name_with_schema = table_name
+            if schema is not None:
+                table_name_with_schema = schema + "." + table_name_with_schema
+
+            if table_name_with_schema in metadata.tables:
+                table_object = table_name_with_schema.tables[table_name_with_schema]
+                table_object.drop()
+
         import_table = Table(table_name, metadata, *columns_to_create)
 
         pprint.pprint(columns_to_create)
@@ -156,14 +171,18 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
         if schema_only:
            pass
         else:
-            import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter)
+            import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter, schema=schema)
 
 
-def import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter):
+def import_csv_file_using_inserts(file_name, connection_url, table_name, header, data_type, positions, delimiter, schema=None):
 
     engine = create_engine(connection_url)
     connection = engine.connect()
     i = 0
+
+    table_name_to_insert = engine.dialect.identifier_preparer.quote_identifier(table_name)
+    if schema is not None:
+        table_name_to_insert = engine.dialect.identifier_preparer.quote_identifier(schema) + "." + table_name_to_insert
 
     with open(file_name, "rb") as f:
         csv_reader = csv.reader(f, delimiter=delimiter)
@@ -188,7 +207,7 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
                 header_string = header_string + engine.dialect.identifier_preparer.quote_identifier(label) + ","
             header_string = header_string[:-1] + ")"
 
-            insert_template = "insert into %s  %s values (%s)" % (engine.dialect.identifier_preparer.quote_identifier(table_name), header_string,
+            insert_template = "insert into %s  %s values (%s)" % (table_name_to_insert, header_string,
                                                                   ("%s," * len(columns_to_include))[:-1])
 
             if len(data_converted) > 0:
@@ -329,6 +348,8 @@ def convert_string(string_to_convert, data_type):
     if string_to_convert == "":
         return "NULL"
     elif data_type == Float:
+        if "." == string_to_convert:
+            string_to_convert = "0"
         return float(string_to_convert)
     elif data_type == Integer:
         return int(string_to_convert)
@@ -359,7 +380,8 @@ def get_data_type(string_to_evaluate):
 def ensure_options_dict_missing_fields(options_dict):
 
     option_names = ["file_name", "connection_string", "table_name", "delimiter", "no_headers", "header", "out_file_name",
-                    "schema_only_file_name", "cleaned_csv_file_name"]
+                    "schema_only_file_name", "cleaned_csv_file_name", "db_schema", "drop_table_first", "no_primary_key"]
+
     for option_name in option_names:
         if option_name not in options_dict:
             options_dict[option_name] = None
@@ -381,6 +403,9 @@ def set_options(options):
     options_dict["out_file_name"] = options.out_file_name
     options_dict["schema_only_file_name"] = options.schema_only_file_name
     options_dict["cleaned_csv_file_name"] = options.cleaned_csv_file_name
+    options_dict["db_schema"] = options.db_schema
+    options_dict["drop_table_first"] = options.drop_table_first
+    options_dict["no_primary_key"] = options.no_primary_key
 
     return options_dict
 
@@ -411,7 +436,7 @@ if __name__ == "__main__":
                       dest="out_file_name"
                       )
 
-    parser.add_option("-s", "--schemaonly",
+    parser.add_option("-y", "--schemaonly",
                       help="Generate the schema with flag 1", default=None, dest="schema_only_file_name"
                       )
 
@@ -423,7 +448,17 @@ if __name__ == "__main__":
                       help="Bulk load a file using database bulk load functionality. The file has to be accessible on the server."
                       )
 
+    parser.add_option("-s", "--schema",
+                      help="Import data set into a specified database schema", default=None, dest="db_schema"
+                      )
+
+    parser.add_option("-p", "--droptablefirst",
+                      help="Drop the existing table first", default=False, dest="drop_table_first", action="store_true"
+                      )
+
     parser.add_option("-j", "--jsonfile", default=False, dest="json_file_name")
+
+    parser.add_option("-i", "--noid", default=False, dest="no_primary_key", action="store_true")
 
     (options, args) = parser.parse_args()
 
@@ -447,4 +482,6 @@ if __name__ == "__main__":
     options_dict = ensure_options_dict_missing_fields(options_dict)
     generate_schema_from_csv_file(options_dict["file_name"], options_dict["connection_string"],
                                   options_dict["table_name"], str(options_dict["delimiter"]),
-                                  no_header=options_dict["no_headers"], override_header=options_dict["header"])
+                                  drop_table_first=options_dict["drop_table_first"],schema=options_dict["db_schema"],
+                                  no_header=options_dict["no_headers"], override_header=options_dict["header"],
+                                  no_primary_key=options_dict["no_primary_key"])
