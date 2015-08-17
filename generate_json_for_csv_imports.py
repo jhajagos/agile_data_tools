@@ -1,7 +1,5 @@
 __author__ = 'jhajagos'
 
-
-
 """
 This will quickly generate an import of tables based on a template and file name pattern.
 It uses the first part of the filename as the table name
