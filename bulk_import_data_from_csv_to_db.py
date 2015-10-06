@@ -19,7 +19,7 @@ from optparse import OptionParser
 import os
 import json
 
-from sqlalchemy import Table, Column, Integer, Text, Float, String, DateTime, MetaData, create_engine
+from sqlalchemy import Table, Column, Integer, Text, Float, String, DateTime, MetaData, create_engine, text
 
 
 def clean_header(raw_header):
@@ -48,7 +48,8 @@ def clean_header(raw_header):
 
 
 def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_table", delimiter=",", no_header=False,
-                                  override_header=None, schema_only=None, schema=None, drop_table_first=False, no_primary_key=False):
+                                  override_header=None, schema_only=None, schema=None, drop_table_first=False,
+                                  no_primary_key=False, timestamp=True):
     """Takes a csv file and creates a table schema for it"""
     with open(file_name, "rb") as f:
 
@@ -118,7 +119,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
         else:
             columns_to_create = []
 
-        for j in range(len(header)): #
+        for j in range(len(header)):
             column_name = header[j]
 
             if data_type[column_name] is None:
@@ -143,7 +144,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
                 field_sizes[column_name] = field_size
                 data_type[column_name] = String(field_sizes[column_name])
 
-            if data_type[column_name] == Integer:  # If the integer is too large store as string using 2**32 has 10 digits as cut off
+            if data_type[column_name] == Integer: # If the integer is too large store as string using 2**32 has 10 digits as cut off
                 if field_sizes[column_name] > 9:
                     data_type[column_name] = String(field_sizes[column_name])
 
@@ -161,6 +162,9 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
             if table_name_with_schema in metadata.tables:
                 table_object = table_name_with_schema.tables[table_name_with_schema]
                 table_object.drop()
+
+        if timestamp:
+            columns_to_create += [Column("created_on", DateTime, server_default=text('NOW()'))]
 
         import_table = Table(table_name, metadata, *columns_to_create)
 
