@@ -306,12 +306,12 @@ def clean_string(string_to_clean):
         string_to_clean = string_to_clean[1:-1]
     
     if re_money.match(string_to_clean):
-        string_to_clean = join(string_to_clean.split(","),"")[1:]
+        string_to_clean = join(string_to_clean.split(","), "")[1:]
         if "." not in string_to_clean:  # if there is no decimal add one so it is imported as a float
             string_to_clean = string_to_clean + ".00"
    
     if re_float.match(string_to_clean):
-       string_to_clean = join(string_to_clean.split(","),"")
+       string_to_clean = join(string_to_clean.split(","), "")
        
     if re_us_date_format.match(string_to_clean):
         date_split = string_to_clean.split("/")
