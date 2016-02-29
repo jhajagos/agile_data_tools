@@ -366,6 +366,11 @@ def get_data_type(string_to_evaluate):
     re_integer = re.compile(r"^([1-9][0-9]*$|0$)")
     re_float = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
     re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
+    re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}$")
+    re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
+    re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
+    re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
+
     re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
     if string_to_evaluate == "":
         return None
@@ -373,10 +378,17 @@ def get_data_type(string_to_evaluate):
         return DateTime
     elif re_date.match(string_to_evaluate):
         return DateTime
+    elif re_odbc_date_time_1.match(string_to_evaluate):
+        return DateTime
+    elif re_odbc_date_time_2.match(string_to_evaluate):
+        return DateTime
+    elif re_odbc_date_time_3.match(string_to_evaluate):
+        return DateTime
     elif re_integer.match(string_to_evaluate):
         return Integer
     elif re_float.match(string_to_evaluate):
         return Float
+
     else:
         return String
 

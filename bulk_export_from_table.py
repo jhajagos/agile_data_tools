@@ -2,7 +2,6 @@ __author__ = 'janos'
 
 import csv
 import argparse
-
 import sqlalchemy as sa
 
 
