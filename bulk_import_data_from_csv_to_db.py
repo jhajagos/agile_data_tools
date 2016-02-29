@@ -150,18 +150,21 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
             columns_to_create.append(Column(column_name, data_type[column_name]))
 
+        metadata = MetaData(schema=schema)
         if not drop_table_first:
-            metadata = MetaData(schema=schema)
+            pass
         else:
-            metadata = MetaData(schema, reflect=True)
+            #metadata = MetaData(bind=engine, schema=schema, reflect=True)
 
             table_name_with_schema = table_name
             if schema is not None:
                 table_name_with_schema = schema + "." + table_name_with_schema
 
-            if table_name_with_schema in metadata.tables:
-                table_object = table_name_with_schema.tables[table_name_with_schema]
-                table_object.drop()
+            #TODO: This uses PostGreSQL if exists syntax
+            # if table_name_with_schema in metadata.tables:
+            #     table_object = metadata.tables[table_name_with_schema]
+            #     table_object.drop()
+            engine.execute("drop table if exists %s" % table_name_with_schema)
 
         if timestamp:
             columns_to_create += [Column("created_on", DateTime, server_default=text('NOW()'))]
@@ -359,19 +362,18 @@ def convert_string(string_to_convert, data_type):
         return int(string_to_convert)
     else:
         return "'%s'" % string_to_convert
-    
-    
+
+re_integer = re.compile(r"^([1-9][0-9]*$|0$)")
+re_float = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
+re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
+re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}$")
+re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
+re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
+re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
+
 def get_data_type(string_to_evaluate):
     """Take a string and returns a SQLAlchemy data type class"""
-    re_integer = re.compile(r"^([1-9][0-9]*$|0$)")
-    re_float = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
-    re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
-    re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}$")
-    re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
-    re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
-    re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
 
-    re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
     if string_to_evaluate == "":
         return None
     elif re_odbc_date.match(string_to_evaluate):
