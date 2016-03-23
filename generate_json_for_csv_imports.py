@@ -39,4 +39,7 @@ def main(file_name_pattern, template_json_file):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    if len(sys.argv) > 1:
+        main(sys.argv[1], sys.argv[2])
+    else:
+        print("python generate_json_for_csv_imports.py *.csv template.json")
