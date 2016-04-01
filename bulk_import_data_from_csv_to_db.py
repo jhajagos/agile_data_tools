@@ -295,27 +295,31 @@ def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
     return abs_cleaned_csv_file_name
 
 
+re_money = re.compile(r"\$[0-9,.]+")
+re_float = re.compile(r"-?([0-9+]*\.?|[eE]?|[0-9]?)+$")
+re_quotes = re.compile(r'^".*"$')
+re_us_date_format = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$")
+
+
 def clean_string(string_to_clean):
     """Cleans a string for importing into a sql database"""
-    # Right now we only preprocess money string
-    re_money = re.compile(r"\$[0-9,.]+")
-    re_float = re.compile(r"-?([0-9+]*\.?|[eE]?|[0-9]?)+$")
-    re_quotes = re.compile(r'^".*"$')
-    re_us_date_format = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$")
-    
+    # Right now we only pre-process money string
+
     string_to_clean = string_to_clean.rstrip()
    
     if re_quotes.match(string_to_clean):
         string_to_clean = string_to_clean[1:-1]
-    
-    if re_money.match(string_to_clean):
-        string_to_clean = join(string_to_clean.split(","), "")[1:]
-        if "." not in string_to_clean:  # if there is no decimal add one so it is imported as a float
-            string_to_clean = string_to_clean + ".00"
-   
-    if re_float.match(string_to_clean):
-       string_to_clean = join(string_to_clean.split(","), "")
-       
+
+    if len(string_to_clean) <= 16: # Long strings ignore
+        if re_money.match(string_to_clean):
+            string_to_clean = join(string_to_clean.split(","), "")[1:]
+            if "." not in string_to_clean:  # if there is no decimal add one so it is imported as a float
+                string_to_clean = string_to_clean + ".00"
+
+    if len(string_to_clean) <= 16: # Long strings ignore
+        if re_float.match(string_to_clean):
+            string_to_clean = join(string_to_clean.split(","), "")
+
     if re_us_date_format.match(string_to_clean):
         date_split = string_to_clean.split("/")
         
@@ -329,7 +333,6 @@ def clean_string(string_to_clean):
             year_string = "0" + year_string
         
         date_string = ""
-        
         if len(year_string) < 4:
             if year < 100:
                 if year > 50:
@@ -364,12 +367,13 @@ def convert_string(string_to_convert, data_type):
         return "'%s'" % string_to_convert
 
 re_integer = re.compile(r"^([1-9][0-9]*$|0$)")
-re_float = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
+re_float_complex = re.compile(r"([0-9]*\.[0-9]+[eE](\+|\-)?[0-9]+|[[1-9][0-9]*[eE](\+|\-)?[0-9]+|[0-9]*\.[0-9]*|\.[0-9]+[eE](\+|\-)?[0-9]+|\.[0-9]+|[1-9][0-9]*)$")
 re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
 re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}$")
 re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
 re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
 re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
+
 
 def get_data_type(string_to_evaluate):
     """Take a string and returns a SQLAlchemy data type class"""
@@ -388,7 +392,7 @@ def get_data_type(string_to_evaluate):
         return DateTime
     elif re_integer.match(string_to_evaluate):
         return Integer
-    elif re_float.match(string_to_evaluate):
+    elif re_float_complex.match(string_to_evaluate):
         return Float
 
     else:
