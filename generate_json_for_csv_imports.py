@@ -22,7 +22,7 @@ def main(file_name_pattern, template_json_file):
         base_file_name, extension = os.path.splitext(file_name)
 
         extension = extension.lower()
-        if extension == ".csv":
+        if extension in (".csv", ".txt"):
             csv_files_to_import += [(file_name, base_file_name, directory)]
 
     print(csv_files_to_import)
