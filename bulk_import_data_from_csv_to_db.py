@@ -372,6 +372,7 @@ re_odbc_date = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$")
 re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}$")
 re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
 re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
+re_odbc_date_time_4 = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[-+][0-9]{2}:[0-9]{2}")
 re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
 
 
@@ -389,6 +390,8 @@ def get_data_type(string_to_evaluate):
     elif re_odbc_date_time_2.match(string_to_evaluate):
         return DateTime
     elif re_odbc_date_time_3.match(string_to_evaluate):
+        return DateTime
+    elif re_odbc_date_time_4.match(string_to_evaluate):
         return DateTime
     elif re_integer.match(string_to_evaluate):
         return Integer
