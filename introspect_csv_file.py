@@ -1,7 +1,9 @@
 __author__ = 'jhajagos'
 
 """
-For troubleshooting a CSV file
+For troubleshooting a CSV file by introspecting the file
+and for each column producing a count for each column. This is not
+scalable for very large files.
 """
 
 import csv
@@ -20,7 +22,6 @@ def main(file_name, delimiter=",", has_header=True, columns=None):
             with open(file_name, "rb") as fs:
                 csv_reader1 = csv.reader(f, delimiter=delimiter)
                 header = range(len(csv_reader1.next()))
-
 
         if columns is None:
             columns = header

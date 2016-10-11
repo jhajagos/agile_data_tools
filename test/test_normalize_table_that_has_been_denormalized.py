@@ -83,3 +83,79 @@ class TestGetColumnsThatAppearToRepeat(unittest.TestCase):
     def test_more_difficult_column_names_that_repeat(self):
         columns_that_repeat = ntd.get_columns_that_appear_to_repeat(self.more_difficult_field_name, "Other Procedure  (ICD) Code ")
         self.assertTrue(len(columns_that_repeat))
+
+
+class TestJoinTablesTogether(unittest.TestCase):
+
+    def setUp(self):
+
+        engine = sa.create_engine("sqlite://")
+        connection = engine.connect()
+        connection.execute("create table main_table (a varchar(10), b varchar(10), c varchar(10))")
+        connection.execute("create table join_table (a varchar(10), x varchar(10), z varchar(10))")
+
+        main_table_elements = [("1", "3", "4"), ("2", "3", "4")]
+        join_table_elements = [("1", "z", "x"), ("2", "y", "z"), ("3", "x", "n")]
+
+        metadata = sa.MetaData(connection, reflect=True)
+
+        for row in main_table_elements:
+            connection.execute(metadata.tables["main_table"].insert(row))
+
+        for row in join_table_elements:
+            connection.execute(metadata.tables["join_table"].insert(row))
+
+        self.connection = connection
+
+    def test_join_tables_togehther(self):
+        join_struct = [{"table_name": "main_table", "alias": "mt", "fields": ["a", "b", "c"], "field_aliases": {}},
+                 {"table_name": "join_table", "alias": "jt", "fields": ["a", "x", "z"], "field_aliases": {"a": "a1"},
+                 "join_criteria": {"join_table": "main_table", "join_table_field": "a", "join_to_table_field": "a"}
+                 }
+                ]
+
+        join_sql = ntd.join_tables_together(join_struct)
+        self.assertIsNotNone(join_sql)
+
+        c = self.connection.execute(join_sql)
+
+        result_set = list(c)
+        print(result_set)
+        self.assertEquals(2, len(result_set))
+
+
+class TestJoinFactTables(unittest.TestCase):
+
+    def setUp(self):
+        engine = sa.create_engine("sqlite://")
+        connection = engine.connect()
+
+        ddl_sql = """
+        create table f_detail (id int, type_id int, lab_procedure_class_id int, details varchar(100));
+        create table d_type (type_id int, type_code varchar(5), type_desc varchar(10));
+        create table d_procedure_class (procedure_class_id int, procedure_class_code varchar(5), procedure_desc varchar(10));
+        """
+
+        for ddl_statement in ddl_sql.split(";"):
+            if len(ddl_statement.strip()):
+                connection.execute(ddl_statement)
+
+        self.connection = connection
+        self.metadata = sa.MetaData(connection, reflect=True)
+
+    def test_fact_table_struct(self):
+        join_struct = ntd.generate_join_struct_for_fact_table("f_detail", self.metadata, "d_", "_id",
+                                                              overrides={"lab_procedure_class_id": "procedure_class_id"},
+                                                              filter_table=None)
+        self.assertTrue(len(join_struct))
+        self.assertEquals(3, len(join_struct))
+
+        select_join_sql = ntd.join_tables_together(join_struct)
+
+        print(select_join_sql)
+
+        self.assertTrue(len(select_join_sql))
+
+
+        self.connection.execute(select_join_sql)
+

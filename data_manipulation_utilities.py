@@ -199,7 +199,7 @@ Excluding certain fields
 Chaining together multiple joins
 
 The script using the introspective /relfective ability of SQLAlchemy to
-
+join two tables together
     """
     metadata = reflect_metadata(engine, schema=None)
     t1_obj = metadata.tables[table_1]
@@ -262,3 +262,128 @@ The script using the introspective /relfective ability of SQLAlchemy to
     metadata.create_all()
 
     #TODO: Add the select into statement; and the join statements
+
+
+def join_tables_together(join_struct, pre_element_escape='"', post_element_escape='"', space=4):
+    # join_struct
+    # [{"table_name": "main_table", "alias": "mt", "fields": ["a", "b", "c"], "field_aliases": {}},
+    #  {"table_name": "join_table", "alias": "jt", "fields": ["a", "x", "z"], "field_aliases": {"a": "a1"},
+    #   "join_criteria": {"join_table": "main_table", "join_table_field": "a", "join_to_table_field": "a"}
+    #   }
+    #  ]
+
+    spacer = space * " "
+
+    def escape_element(element, pre_element_escape=pre_element_escape, post_element_escape=post_element_escape):
+        return pre_element_escape + element + post_element_escape
+
+    sql_statement = "SELECT\n"
+    fields_sql = ""
+
+    for table_struct in join_struct:
+        table_alias = table_struct["alias"]
+        table_field = table_struct["fields"]
+        if "field_aliases" in table_struct:
+            field_aliases = table_struct["field_aliases"]
+        else:
+            field_aliases = {}
+
+        for field in table_field:
+            field_str = table_alias + "." + escape_element(field)
+            if field in field_aliases:
+                field_str += " as " + escape_element(field_aliases[field])
+            fields_sql += spacer + field_str + ",\n"
+
+    fields_sql = fields_sql[:-2]
+
+    sql_statement +=  fields_sql
+    sql_statement += "\n" + spacer + "FROM "
+
+    table_aliases_dict = {}
+    for table_struct in join_struct:
+        table_aliases_dict[table_struct["table_name"]] = table_struct["alias"]
+
+    table_sql = ""
+    i = 0
+    for table_struct in join_struct:
+        table_name = table_struct["table_name"]
+        table_alias = table_struct["alias"]
+        table_sql += spacer
+        if i:
+            table_sql += "JOIN "
+
+        table_sql += escape_element(table_name) + " " + table_alias
+        if i:
+            table_sql += " ON "
+            join_criteria = table_struct["join_criteria"]
+            table_sql += table_alias + "." + escape_element(join_criteria["join_to_table_field"]) + " = "
+            table_sql += table_aliases_dict[join_criteria["join_table"]] + "." + escape_element(join_criteria["join_table_field"])
+        table_sql += "\n"
+        i += 1
+
+    sql_statement += "\n" + table_sql
+    return sql_statement
+
+
+def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_table, field_strip_suffix="_id", overrides=None, filter_table=None):
+    """For a fact table using the metadata create a join"""
+    # join_struct = [{"table_name": "main_table", "alias": "mt", "fields": ["a", "b", "c"], "field_aliases": {}},
+    #                {"table_name": "join_table", "alias": "jt", "fields": ["a", "x", "z"], "field_aliases": {"a": "a1"},
+    #                 "join_criteria": {"join_table": "main_table", "join_table_field": "a", "join_to_table_field": "a"}
+    #                 }
+    #                ]
+    join_list = []
+    fact_table_obj = metadata.tables[fact_table]
+
+    full_column_names = fact_table_obj.columns
+
+    tables = [table for table in metadata.tables]
+    print(tables)
+
+    dimension_column_names = [full_column_name.name for full_column_name in full_column_names]
+
+    j = 1
+    columns_in_select = list(dimension_column_names)
+
+    join_list += [{"table_name": fact_table, "alias": "fx", "fields": dimension_column_names, "field_aliases": {}}]
+
+    for raw_column_name in dimension_column_names:
+
+        if raw_column_name in overrides:
+            column_name = overrides[raw_column_name]
+        else:
+            column_name = raw_column_name
+
+        if field_strip_suffix in column_name:
+            stripped_column_name = column_name[:-1 * len(field_strip_suffix)]
+            potential_dimension_table = prefix_dimension_table + stripped_column_name
+
+            if potential_dimension_table in tables:
+                alias = "j" + str(j)
+                potential_dimension_table_obj = metadata.tables[potential_dimension_table]
+                dimension_full_column_names = potential_dimension_table_obj.columns
+                dimension_column_names = [col.name for col in dimension_full_column_names]
+                field_aliases = {}
+                columns_to_add = []
+                for potential_column_to_add in dimension_column_names:
+                    if potential_column_to_add != column_name:
+                        columns_to_add += [potential_column_to_add]
+                        if potential_column_to_add in columns_in_select:
+                            new_column_name = alias + "_" + potential_column_to_add
+                            field_aliases[potential_column_to_add] = new_column_name
+                            columns_in_select += [new_column_name]
+                        else:
+                            columns_in_select += [potential_column_to_add]
+
+
+                join_list += [{"table_name": potential_dimension_table, "alias": alias, "fields": columns_to_add,
+                 "join_criteria": {"join_table": fact_table, "join_table_field": raw_column_name, "join_to_table_field": column_name}}]
+
+                j += 1
+
+    print(join_list)
+    return join_list
+
+
+
+
