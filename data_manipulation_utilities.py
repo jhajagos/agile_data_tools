@@ -325,7 +325,9 @@ def join_tables_together(join_struct, pre_element_escape='"', post_element_escap
     return sql_statement
 
 
-def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_table, field_strip_suffix="_id", overrides=None, filter_table=None):
+def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_table, field_strip_suffix="_id",
+                                        overrides={}, filter_table=None,
+                                        schema=None):
     """For a fact table using the metadata create a join"""
     # join_struct = [{"table_name": "main_table", "alias": "mt", "fields": ["a", "b", "c"], "field_aliases": {}},
     #                {"table_name": "join_table", "alias": "jt", "fields": ["a", "x", "z"], "field_aliases": {"a": "a1"},
@@ -333,21 +335,25 @@ def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_t
     #                 }
     #                ]
     join_list = []
-    fact_table_obj = metadata.tables[fact_table]
+    if schema is not None:
+        schema_string = schema + "."
+    else:
+        schema_string = ""
+    fact_table_obj = metadata.tables[schema_string + fact_table]
 
     full_column_names = fact_table_obj.columns
 
     tables = [table for table in metadata.tables]
     print(tables)
 
-    dimension_column_names = [full_column_name.name for full_column_name in full_column_names]
+    fact_column_names = [full_column_name.name for full_column_name in full_column_names]
 
     j = 1
-    columns_in_select = list(dimension_column_names)
+    columns_in_select = list(fact_column_names)
 
-    join_list += [{"table_name": fact_table, "alias": "fx", "fields": dimension_column_names, "field_aliases": {}}]
+    join_list += [{"table_name": schema_string + fact_table, "alias": "fx", "fields": fact_column_names, "field_aliases": {}}]
 
-    for raw_column_name in dimension_column_names:
+    for raw_column_name in fact_column_names:
 
         if raw_column_name in overrides:
             column_name = overrides[raw_column_name]
@@ -356,19 +362,25 @@ def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_t
 
         if field_strip_suffix in column_name:
             stripped_column_name = column_name[:-1 * len(field_strip_suffix)]
-            potential_dimension_table = prefix_dimension_table + stripped_column_name
+            potential_dimension_table = schema_string + prefix_dimension_table + stripped_column_name
 
             if potential_dimension_table in tables:
                 alias = "j" + str(j)
                 potential_dimension_table_obj = metadata.tables[potential_dimension_table]
                 dimension_full_column_names = potential_dimension_table_obj.columns
-                dimension_column_names = [col.name for col in dimension_full_column_names]
+                fact_column_names = [col.name for col in dimension_full_column_names]
                 field_aliases = {}
                 columns_to_add = []
-                for potential_column_to_add in dimension_column_names:
+                for potential_column_to_add in fact_column_names:
+
                     if potential_column_to_add != column_name:
                         columns_to_add += [potential_column_to_add]
-                        if potential_column_to_add in columns_in_select:
+                        if raw_column_name in overrides:
+                            new_column_name = raw_column_name[:-1 * len(field_strip_suffix)] + "_" + potential_column_to_add
+                            field_aliases[potential_column_to_add] = new_column_name
+                            columns_in_select += [new_column_name]
+
+                        elif potential_column_to_add in columns_in_select:
                             new_column_name = alias + "_" + potential_column_to_add
                             field_aliases[potential_column_to_add] = new_column_name
                             columns_in_select += [new_column_name]
@@ -376,8 +388,8 @@ def generate_join_struct_for_fact_table(fact_table, metadata, prefix_dimension_t
                             columns_in_select += [potential_column_to_add]
 
 
-                join_list += [{"table_name": potential_dimension_table, "alias": alias, "fields": columns_to_add,
-                 "join_criteria": {"join_table": fact_table, "join_table_field": raw_column_name, "join_to_table_field": column_name}}]
+                join_list += [{"table_name": potential_dimension_table, "alias": alias, "fields": columns_to_add, "field_aliases": field_aliases,
+                 "join_criteria": {"join_table": schema_string + fact_table, "join_table_field": raw_column_name, "join_to_table_field": column_name}}]
 
                 j += 1
 
