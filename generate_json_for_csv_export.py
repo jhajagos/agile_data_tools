@@ -17,7 +17,6 @@ if __name__ == "__main__":
         if schema == "None":
             schema = None
 
-
         for table in tables:
 
             time_stamp = time.strftime("%Y%m%d_%H%M%S")
