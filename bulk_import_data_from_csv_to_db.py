@@ -230,6 +230,10 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
 def find_data_type_by_precedence(data_type_hash):
     data_types = data_type_hash.keys()
     inferred_data_type = None
+
+    if DateTime in data_types and (Integer in data_types or Float in data_types):
+        return String
+
     for data_type in data_types:
         if data_type is not None:
             if inferred_data_type is None and data_type is not None: #initially we assume that the data type is not None
@@ -237,6 +241,8 @@ def find_data_type_by_precedence(data_type_hash):
             else:
                 if inferred_data_type == Integer and data_type == Float:
                     inferred_data_type = Float
+                if inferred_data_type == DateTime and data_type == Integer:
+                    inferred_data_type = String
                 elif data_type == String:
                     inferred_data_type = String
                     
@@ -244,21 +250,6 @@ def find_data_type_by_precedence(data_type_hash):
         return Integer
     else:
         return inferred_data_type
-
-
-def find_most_common_data_type(data_type_hash):
-    data_types = data_type_hash.keys()
-    pprint.pprint(data_types)
-    exit()
-    dt_max = (None, 0)
-    for dt in data_types:
-        if dt is not None:
-            if data_type_hash[dt] > dt_max[1]:
-                dt_max = (dt,data_type_hash[dt])
-    if String in data_type_hash:
-        return String
-    else:
-        return dt_max[0]
 
 
 def clean_csv_file_for_import(csv_file_name, delimiter=",", header = True):
