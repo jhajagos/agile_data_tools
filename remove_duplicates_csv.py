@@ -8,10 +8,9 @@ def main(in_csv_file_name, out_csv_file_name, field_for_key, delimiter=','):
     field_value_dict = {}
 
     with open(in_csv_file_name, "rb") as f:
-
+        csv_reader = csv.reader(f)
         with open(out_csv_file_name, "wb") as fw:
             csv_writer = csv.writer(fw)
-            csv_reader = csv.reader(f)
             for row in csv_reader:
 
                 if i == 0:
@@ -24,7 +23,7 @@ def main(in_csv_file_name, out_csv_file_name, field_for_key, delimiter=','):
                     if field_value not in field_value_dict:
                         csv_writer.writerow(row)
                         field_value_dict[field_value] = 1
-            i += 1
+                i += 1
 
 
 if __name__ == "__main__":
