@@ -185,8 +185,9 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
 
     engine = create_engine(connection_url)
     connection = engine.connect()
-    i = 0
+    transaction = connection.begin()
 
+    i = 0
     table_name_to_insert = engine.dialect.identifier_preparer.quote_identifier(table_name)
     if schema is not None:
         table_name_to_insert = engine.dialect.identifier_preparer.quote_identifier(schema) + "." + table_name_to_insert
@@ -218,11 +219,20 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
                                                                   ("%s," * len(columns_to_include))[:-1])
 
             if len(data_converted) > 0:
-                connection.execute(insert_template % tuple(data_converted))
+                try:
+                    connection.execute(insert_template % tuple(data_converted))
+                except:
+                    transaction.commit()
+                    raise
 
-            if i % 1000 == 0 and i > 0:
+            if i % 10000 == 0 and i > 0:
                 print("Importing %s records" % i)
+                transaction.commit()
+                transaction = connection.begin() # Begin a new transaction
+
             i += 1
+
+        transaction.commit()
         print("Imported %s rows into '%s'" % (i, table_name))
     connection.close()
 
