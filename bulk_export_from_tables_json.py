@@ -27,3 +27,5 @@ if __name__ == "__main__":
 
         bulk_export_from_table(connection_uri, file_name, table_name, restrictions=restrictions, schema=schema)
 
+
+
