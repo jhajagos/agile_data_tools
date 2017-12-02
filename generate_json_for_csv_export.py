@@ -4,7 +4,7 @@ import time
 import os
 
 if __name__ == "__main__":
-
+    #print(sys.argv)
     if len(sys.argv) > 1:
 
         connection_uri = sys.argv[1]
