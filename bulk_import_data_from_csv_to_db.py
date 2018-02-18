@@ -55,8 +55,9 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
 
         try:
             engine = create_engine(connection_url)
-        except IOError:
-            print "Database could not be connected to"
+
+        except(IOError):
+            print("Database could not be connected to")
             raise
 
         if override_header:
@@ -103,7 +104,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
                         data_types[positions[j]][data_type] = 1
 
         pprint.pprint(field_sizes)
-        print
+        print()
         pprint.pprint(data_types)
         f.close()
 
@@ -503,7 +504,7 @@ if __name__ == "__main__":
             with open(absolute_json_file_name, "w") as fw:
                 json.dump(options_dict, fw, indent=4, separators=(',', ': '))
     else:
-        options_dict = set_options()
+        options_dict = set_options(options)
 
     options_dict = ensure_options_dict_missing_fields(options_dict)
     generate_schema_from_csv_file(options_dict["file_name"], options_dict["connection_string"],
