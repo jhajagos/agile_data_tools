@@ -36,7 +36,8 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
             for and_statement in and_statements:
                 select_statement = select_statement.where(and_statement)
 
-        cursor = engine.execute(select_statement.compile())
+        connection = engine.connect()
+        cursor = connection.execution_options(stream_results=True).execute(select_statement.compile())
         print(select_statement.compile())
         print(select_statement.compile().params)
         header = [c.name for c in table_obj.columns]

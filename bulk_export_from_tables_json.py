@@ -8,7 +8,6 @@ if __name__ == "__main__":
     with open(json_file, "r") as f:
         tables_to_export_list = json.load(f)
 
-
     for table_config in tables_to_export_list:
 
         connection_uri = table_config["connection_uri"]
