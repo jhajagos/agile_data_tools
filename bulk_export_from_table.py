@@ -3,6 +3,16 @@ __author__ = 'janos'
 import csv
 import argparse
 import sqlalchemy as sa
+import sys
+import json
+
+def open_csv_file(file_name, mode="r"):
+
+    ver_info = sys.version_info[0]
+    if ver_info == 2:
+        return open(file_name, mode=mode + "b")
+    else:
+        return open(file_name, newline="", mode=mode)
 
 
 def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, schema=None, restrictions=None):
@@ -43,7 +53,7 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
         header = [c.name for c in table_obj.columns]
 
         i = 0
-        with open(file_name_to_write_to, "wb") as fw:
+        with open_csv_file(file_name_to_write_to, mode="w") as fw:
             csv_writer = csv.writer(fw)
             csv_writer.writerow(header)
 
@@ -53,6 +63,8 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                     if cell is not None:
                         if cell.__class__ == u"".__class__:
                             cell = cell.encode("ascii", errors="replace")
+                        elif cell.__class__ == [].__class__:
+                            cell = json.dumps(cell)
                     row_to_write += [cell]
                 csv_writer.writerow(row_to_write)
 
@@ -62,6 +74,7 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                     print("Exported %s lines" % i)
     else:
         raise RuntimeError, "Table '%s' could not be found" % table_name
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Export a table to CSV')
