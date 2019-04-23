@@ -6,6 +6,7 @@ import sqlalchemy as sa
 import sys
 import json
 
+
 def open_csv_file(file_name, mode="r"):
 
     ver_info = sys.version_info[0]
