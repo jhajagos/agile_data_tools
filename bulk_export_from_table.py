@@ -24,7 +24,7 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
     try:
         engine = sa.create_engine(connection_uri)
     except IOError:
-        print "Database could not be connected to"
+        print("Database could not be connected to")
         raise
 
     meta = sa.MetaData(engine, schema=schema)
@@ -63,7 +63,10 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                 for cell in row:
                     if cell is not None:
                         if cell.__class__ == u"".__class__:
-                            cell = cell.encode("ascii", errors="replace")
+                            if sys.version_info[0] == 2:
+                                cell = cell.encode("ascii", errors="replace")
+                            else:
+                                cell = str(cell)
                         elif cell.__class__ == [].__class__:
                             cell = json.dumps(cell)
                     row_to_write += [cell]
@@ -74,7 +77,7 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                 if i % 10000 == 0:
                     print("Exported %s lines" % i)
     else:
-        raise RuntimeError, "Table '%s' could not be found" % table_name
+        raise(RuntimeError, "Table '%s' could not be found" % table_name)
 
 
 if __name__ == "__main__":
