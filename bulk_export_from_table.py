@@ -41,11 +41,14 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
         if restrictions is not None:
             and_statements = []
 
-            for restriction in restrictions:
-                and_statements += [table_obj.columns[restriction] == restrictions[restriction]]
+            if restrictions.__class__ == {}.__class__:
+                for restriction in restrictions:
+                    and_statements += [table_obj.columns[restriction] == restrictions[restriction]]
 
-            for and_statement in and_statements:
-                select_statement = select_statement.where(and_statement)
+                for and_statement in and_statements:
+                    select_statement = select_statement.where(and_statement)
+            else:
+                select_statement = select_statement.where(sa.sql.text(restrictions))
 
         connection = engine.connect()
         cursor = connection.execution_options(stream_results=True).execute(select_statement.compile())
