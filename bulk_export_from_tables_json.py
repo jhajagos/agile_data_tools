@@ -24,7 +24,13 @@ if __name__ == "__main__":
         else:
             schema = None
 
-        bulk_export_from_table(connection_uri, file_name, table_name, restrictions=restrictions, schema=schema)
+        if "order_by" in table_config:
+            order_by = order_by
+        else:
+            order_by = None
+
+        bulk_export_from_table(connection_uri, file_name, table_name, restrictions=restrictions, schema=schema,
+                               order_by=order_by)
 
 
 

@@ -16,7 +16,7 @@ def open_csv_file(file_name, mode="r"):
         return open(file_name, newline="", mode=mode)
 
 
-def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, schema=None, restrictions=None):
+def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, schema=None, restrictions=None, order_by=None):
     """
         We only allow simple restrictions to be specified
          {"field_name1": "value", "field_nam2": "value"}
@@ -49,6 +49,17 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                     select_statement = select_statement.where(and_statement)
             else:
                 select_statement = select_statement.where(sa.sql.text(restrictions))
+
+        if order_by is not None:
+
+            if order_by.__class__ != [].__class__:
+                order_by = [order_by]
+
+            order_by_list = []
+            for ob in order_by:
+                order_by_list += [table_obj.columns[ob]]
+
+            select_statement = select_statement.order_by(*order_by_list)
 
         connection = engine.connect()
         cursor = connection.execution_options(stream_results=True).execute(select_statement.compile())
