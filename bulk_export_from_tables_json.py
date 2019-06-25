@@ -25,7 +25,7 @@ if __name__ == "__main__":
             schema = None
 
         if "order_by" in table_config:
-            order_by = order_by
+            order_by = table_config["order_by"]
         else:
             order_by = None
 
