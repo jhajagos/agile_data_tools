@@ -1,9 +1,15 @@
 from bulk_export_from_table import bulk_export_from_table
 import json
-import sys
+import argparse
 
 if __name__ == "__main__":
-    json_file = sys.argv[1]
+
+    arg_parse_obj = argparse.ArgumentParser(description="Bulk export table into CSV")
+    arg_parse_obj.add_argument("-j", "--json-file-name", dest="json_file_name", required=True)
+
+    arg_obj = arg_parse_obj.parse_args()
+
+    json_file = arg_obj.json_file_name
 
     with open(json_file, "r") as f:
         tables_to_export_list = json.load(f)
