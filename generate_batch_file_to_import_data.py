@@ -1,4 +1,3 @@
-
 import argparse
 import glob
 import os
@@ -15,13 +14,14 @@ def main(glob_file_pattern, out_file_name):
     batch_string = ""
 
     script_directory = os.path.split(os.path.abspath(__file__))[0]
-    import_script_file_name = os.path.join(script_directory, "bulk_import_data_from_csv_to_db.py")
+    import_script_file_name = os.path.join(script_directory, "bulk_import_data_from_csv_to_db_py3.py")
 
     for file_name in files_to_add:
-        batch_string += 'python "%s" -j "%s"%s' % (import_script_file_name, file_name, line_ending)
+        batch_string += 'python3 "%s" -j "%s"%s' % (import_script_file_name, file_name, line_ending)
 
     with open(out_file_name, "w") as fw:
         fw.write(batch_string)
+
 
 if __name__ == "__main__":
 
