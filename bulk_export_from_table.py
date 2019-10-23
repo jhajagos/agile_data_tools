@@ -78,10 +78,10 @@ def bulk_export_from_table(connection_uri, file_name_to_write_to, table_name, sc
                     if cell is not None:
                         if cell.__class__ == u"".__class__:
                             if sys.version_info[0] == 2:
-                                cell = cell.encode("ascii", errors="replace")
+                                cell = cell.encode("ascii", errors="ignore")
                             else:
                                 str_cell = str(cell)
-                                str_cell = str_cell.encode("utf8", errors="replace")
+                                str_cell = str_cell.encode("ascii", errors="ignore")
                                 cell = str(str_cell, "utf8")
                         elif cell.__class__ == [].__class__:
                             cell = json.dumps(cell)
