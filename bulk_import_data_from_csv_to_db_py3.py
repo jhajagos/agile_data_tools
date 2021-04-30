@@ -52,7 +52,7 @@ def generate_schema_from_csv_file(file_name, connection_url, table_name="temp_ta
                                   no_primary_key=False, timestamp=True):
     """Takes a csv file and creates a table schema for it"""
 
-    with open(file_name, newline="", mode="r") as f:
+    with open(file_name, newline="", mode="r", errors="replace") as f:
 
         try:
             engine = create_engine(connection_url)
@@ -191,7 +191,7 @@ def import_csv_file_using_inserts(file_name, connection_url, table_name, header,
     if schema is not None:
         table_name_to_insert = engine.dialect.identifier_preparer.quote_identifier(schema) + "." + table_name_to_insert
 
-    with open(file_name, newline="", mode="r") as f:
+    with open(file_name, newline="", mode="r", errors="replace") as f:
         csv_reader = csv.reader(f, delimiter=delimiter)
         csv_reader.__next__()
         for split_line in csv_reader:
@@ -374,7 +374,7 @@ re_odbc_date_time_1 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]
 re_odbc_date_time_2 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}$")
 re_odbc_date_time_3 = re.compile(r"[0-9]{4}-[0-9]{1,2}-[0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+$")
 re_odbc_date_time_4 = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}[-+][0-9]{2}:[0-9]{2}")
-re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}")
+re_date = re.compile(r"[0-9]{1,2}/[0-9]{1,2}/[0-9]{2,4}$")
 
 
 def get_data_type(string_to_evaluate):
